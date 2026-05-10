@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { devicesApi, Device, LocationHistory } from '../api/devices.api';
+import { devicesApi } from '../api/devices.api';
+import type { Device, LocationHistory } from '../api/devices.api';
 
 interface DevicesState {
   devices: Device[];

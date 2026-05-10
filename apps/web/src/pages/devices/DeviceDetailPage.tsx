@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDevicesStore } from '../../stores/devices.store';
-import { devicesApi, Device } from '../../api/devices.api';
+import { devicesApi } from '../../api/devices.api';
+import type { Device } from '../../api/devices.api';
 import TrackingMap from '../../components/map/TrackingMap';
 
 const PRESETS = [

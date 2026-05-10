@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { LocationRecord } from '../../api/devices.api';
+import type { LocationRecord } from '../../api/devices.api';
 
 interface Props {
   records: LocationRecord[];
