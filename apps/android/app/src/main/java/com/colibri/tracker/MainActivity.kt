@@ -17,6 +17,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.colibri.tracker.databinding.ActivityMainBinding
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanIntentResult
+import com.journeyapps.barcodescanner.ScanOptions
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +31,12 @@ class MainActivity : AppCompatActivity() {
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            val errorMessage = intent.getStringExtra(LocationService.EXTRA_ERROR_MESSAGE)
+            if (errorMessage != null) {
+                Toast.makeText(this@MainActivity, errorMessage, Toast.LENGTH_LONG).show()
+                updateTrackingUI(false)
+                return
+            }
             val coords = intent.getStringExtra(LocationService.EXTRA_LAST_COORDS)
             val sent = intent.getIntExtra(LocationService.EXTRA_SENT_COUNT, 0)
             val errors = intent.getIntExtra(LocationService.EXTRA_ERROR_COUNT, 0)
@@ -62,6 +71,13 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { requestLocationPermissions() }
 
+    private val qrScanLauncher = registerForActivityResult(ScanContract()) { result: ScanIntentResult ->
+        val text = result.contents
+        if (!text.isNullOrBlank()) {
+            binding.etDeviceKey.setText(text)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -74,6 +90,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnToggle.setOnClickListener {
             if (prefs.isTracking) stopTracking() else checkPermissionsAndStart()
+        }
+
+        binding.btnScanQr.setOnClickListener {
+            val options = ScanOptions()
+                .setPrompt("Scan the device key QR code")
+                .setBeepEnabled(false)
+                .setOrientationLocked(false)
+            qrScanLauncher.launch(options)
         }
     }
 
@@ -110,11 +134,31 @@ class MainActivity : AppCompatActivity() {
         prefs.intervalSeconds = intervals[binding.spinnerInterval.selectedItemPosition]
     }
 
+    private fun isValidUrl(url: String): Boolean {
+        if (url.isBlank()) return false
+        return try {
+            val parsed = java.net.URL(url)
+            parsed.protocol == "http" || parsed.protocol == "https"
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun checkPermissionsAndStart() {
         saveInputs()
 
         if (prefs.serverUrl.isBlank() || prefs.deviceKey.isBlank()) {
             Toast.makeText(this, "Enter the server URL and device key first", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!isValidUrl(prefs.serverUrl)) {
+            Toast.makeText(
+                this,
+                "Invalid server URL. It must start with http:// or https://",
+                Toast.LENGTH_LONG,
+            ).show()
+            binding.etServerUrl.requestFocus()
             return
         }
 
@@ -188,6 +232,7 @@ class MainActivity : AppCompatActivity() {
         )
         binding.etServerUrl.isEnabled = !tracking
         binding.etDeviceKey.isEnabled = !tracking
+        binding.btnScanQr.isEnabled = !tracking
         binding.spinnerInterval.isEnabled = !tracking
         binding.tvStatus.text = if (tracking) "Tracking active" else "Not tracking"
         binding.tvLastCoords.text = if (!tracking) "—" else binding.tvLastCoords.text

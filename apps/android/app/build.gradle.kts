@@ -50,4 +50,5 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.play.services.location)
     implementation(libs.androidx.cardview)
+    implementation(libs.zxing.android)
 }

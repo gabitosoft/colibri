@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 import type { LocationRecord } from '../../api/devices.api';
 
@@ -26,10 +27,12 @@ function formatDate(iso: string) {
 }
 
 export default function TrackingMap({ records }: Props) {
+  const { t } = useTranslation();
+
   if (records.length === 0) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100 rounded-xl text-sm text-gray-400">
-        No location data to display
+        {t('map.noData')}
       </div>
     );
   }
@@ -51,21 +54,18 @@ export default function TrackingMap({ records }: Props) {
       />
       <FitBounds records={records} />
 
-      {/* Route polyline */}
       <Polyline positions={positions} color="#3b82f6" weight={3} opacity={0.8} />
 
-      {/* Start marker */}
       <CircleMarker center={first} radius={7} color="#22c55e" fillColor="#22c55e" fillOpacity={1}>
-        <Popup>Start<br />{formatDate(records[0].recordedAt)}</Popup>
+        <Popup>{t('map.start')}<br />{formatDate(records[0].recordedAt)}</Popup>
       </CircleMarker>
 
-      {/* Latest position marker */}
       <CircleMarker center={last} radius={9} color="#3b82f6" fillColor="#3b82f6" fillOpacity={1}>
         <Popup>
-          <strong>Latest position</strong><br />
+          <strong>{t('map.latestPosition')}</strong><br />
           {formatDate(latest.recordedAt)}<br />
-          {latest.speed != null && <>Speed: {Number(latest.speed).toFixed(1)} m/s<br /></>}
-          {latest.accuracy != null && <>Accuracy: ±{Number(latest.accuracy).toFixed(0)} m</>}
+          {latest.speed != null && <>{t('map.speed', { value: Number(latest.speed).toFixed(1) })}<br /></>}
+          {latest.accuracy != null && <>{t('map.accuracy', { value: Number(latest.accuracy).toFixed(0) })}</>}
         </Popup>
       </CircleMarker>
     </MapContainer>

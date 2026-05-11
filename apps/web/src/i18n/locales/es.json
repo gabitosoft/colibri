@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "signOut": "Cerrar sesión"
+  },
+  "auth": {
+    "title": "Bienvenido",
+    "subtitle": "Inicia sesión en tu espacio de trabajo",
+    "workspace": "Espacio de trabajo",
+    "workspacePlaceholder": "mi-empresa",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión…",
+    "error": "Credenciales incorrectas. Por favor intenta de nuevo."
+  },
+  "devices": {
+    "title": "Dispositivos",
+    "subtitle": "Dispositivos GPS vinculados a tu espacio de trabajo",
+    "add": "+ Agregar dispositivo",
+    "empty": "Sin dispositivos. Agrega uno para comenzar.",
+    "loading": "Cargando dispositivos…",
+    "viewHistory": "Ver historial",
+    "remove": "Eliminar",
+    "inactive": "Inactivo",
+    "removeConfirm": "¿Eliminar el dispositivo \"{{name}}\"? También se eliminará todo su historial de ubicaciones.",
+    "keyBanner": {
+      "created": "Dispositivo \"{{name}}\" creado",
+      "hint": "Copia la clave del dispositivo — no se mostrará de nuevo.",
+      "copy": "Copiar",
+      "copied": "Clave copiada al portapapeles",
+      "dismiss": "Cerrar"
+    },
+    "form": {
+      "title": "Agregar dispositivo",
+      "name": "Nombre",
+      "namePlaceholder": "Mi rastreador GPS",
+      "description": "Descripción",
+      "descriptionOptional": "(opcional)",
+      "descriptionPlaceholder": "Vehículo, activo, persona…",
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "creating": "Creando…"
+    },
+    "detail": {
+      "back": "← Dispositivos",
+      "deviceKey": "Clave del dispositivo",
+      "totalPoints": "Puntos cargados",
+      "latestRecord": "Último registro",
+      "noDate": "—",
+      "loading": "Cargando…",
+      "notFound": "Dispositivo no encontrado.",
+      "show": "Mostrar:",
+      "loadingHistory": "Cargando…",
+      "noRecords": "Sin registros para este período.",
+      "historyTitle": "Historial de ubicaciones",
+      "table": {
+        "recordedAt": "Registrado el",
+        "latitude": "Latitud",
+        "longitude": "Longitud",
+        "speed": "Velocidad (m/s)",
+        "heading": "Rumbo (°)",
+        "accuracy": "Precisión (m)",
+        "altitude": "Altitud (m)"
+      }
+    },
+    "presets": {
+      "24h": "Últimas 24 h",
+      "7d": "Últimos 7 días",
+      "30d": "Últimos 30 días"
+    }
+  },
+  "map": {
+    "noData": "Sin datos de ubicación para mostrar",
+    "start": "Inicio",
+    "latestPosition": "Última posición",
+    "speed": "Velocidad: {{value}} m/s",
+    "accuracy": "Precisión: ±{{value}} m"
+  }
+}

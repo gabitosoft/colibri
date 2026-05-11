@@ -11,10 +11,11 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tenantsService: TenantsService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(dto: LoginDto) {
     const tenant = await this.tenantsService.findBySlug(dto.tenantSlug);
+    if (!tenant) throw new UnauthorizedException('Invalid credentials');
 
     const user = await this.usersService.findByEmailAndTenant(dto.email, tenant.id);
     if (!user) throw new UnauthorizedException('Invalid credentials');

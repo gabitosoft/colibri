@@ -55,7 +55,15 @@ class LocationService : LifecycleService() {
     }
 
     private fun startTracking() {
-        api = ApiClient.create(prefs.serverUrl)
+        try {
+            api = ApiClient.create(prefs.serverUrl)
+        } catch (e: Exception) {
+            Log.e(TAG, "Invalid server URL: ${prefs.serverUrl}", e)
+            prefs.isTracking = false
+            broadcastError("Invalid server URL. Please check the configuration.")
+            stopSelf()
+            return
+        }
 
         startForeground(NOTIFICATION_ID, buildNotification("Tracking active", "Starting…"))
 
@@ -117,6 +125,13 @@ class LocationService : LifecycleService() {
         }
     }
 
+    private fun broadcastError(message: String) {
+        val intent = Intent(ACTION_STATUS_UPDATE).apply {
+            putExtra(EXTRA_ERROR_MESSAGE, message)
+        }
+        sendBroadcast(intent)
+    }
+
     private fun broadcastStatus(lastCoords: String?, sent: Int, errors: Int) {
         val intent = Intent(ACTION_STATUS_UPDATE).apply {
             putExtra(EXTRA_LAST_COORDS, lastCoords)
@@ -170,5 +185,6 @@ class LocationService : LifecycleService() {
         const val EXTRA_LAST_COORDS = "last_coords"
         const val EXTRA_SENT_COUNT = "sent_count"
         const val EXTRA_ERROR_COUNT = "error_count"
+        const val EXTRA_ERROR_MESSAGE = "error_message"
     }
 }

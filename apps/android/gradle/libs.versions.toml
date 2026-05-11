@@ -11,6 +11,7 @@ okhttp = "4.12.0"
 retrofit = "2.9.0"
 playServicesLocation = "21.1.0"
 cardview = "1.0.0"
+zxingAndroid = "4.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -25,6 +26,7 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+zxing-android = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

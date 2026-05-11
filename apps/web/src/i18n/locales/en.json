@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your workspace",
+    "workspace": "Workspace",
+    "workspacePlaceholder": "your-workspace",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "error": "Invalid credentials. Please try again."
+  },
+  "devices": {
+    "title": "Devices",
+    "subtitle": "GPS devices linked to your workspace",
+    "add": "+ Add device",
+    "empty": "No devices yet. Add one to get started.",
+    "loading": "Loading devices…",
+    "viewHistory": "View history",
+    "remove": "Remove",
+    "inactive": "Inactive",
+    "removeConfirm": "Remove device \"{{name}}\"? This will also delete all its location history.",
+    "keyBanner": {
+      "created": "Device \"{{name}}\" created",
+      "hint": "Copy the device key below — it won't be shown again.",
+      "copy": "Copy",
+      "copied": "Device key copied to clipboard",
+      "dismiss": "Dismiss"
+    },
+    "form": {
+      "title": "Add device",
+      "name": "Name",
+      "namePlaceholder": "My GPS Tracker",
+      "description": "Description",
+      "descriptionOptional": "(optional)",
+      "descriptionPlaceholder": "Vehicle, asset, person…",
+      "cancel": "Cancel",
+      "create": "Create",
+      "creating": "Creating…"
+    },
+    "detail": {
+      "back": "← Devices",
+      "deviceKey": "Device key",
+      "totalPoints": "Total points loaded",
+      "latestRecord": "Latest record",
+      "noDate": "—",
+      "loading": "Loading…",
+      "notFound": "Device not found.",
+      "show": "Show:",
+      "loadingHistory": "Loading…",
+      "noRecords": "No records for this period.",
+      "historyTitle": "Location history",
+      "table": {
+        "recordedAt": "Recorded at",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "speed": "Speed (m/s)",
+        "heading": "Heading (°)",
+        "accuracy": "Accuracy (m)",
+        "altitude": "Altitude (m)"
+      }
+    },
+    "presets": {
+      "24h": "Last 24 h",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days"
+    }
+  },
+  "map": {
+    "noData": "No location data to display",
+    "start": "Start",
+    "latestPosition": "Latest position",
+    "speed": "Speed: {{value}} m/s",
+    "accuracy": "Accuracy: ±{{value}} m"
+  }
+}
