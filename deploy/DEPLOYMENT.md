@@ -35,6 +35,12 @@ CREATE DATABASE colibri OWNER colibri_user;
 \q
 ```
 
+Then enable the `uuid-ossp` extension (required by the migrations):
+
+```bash
+sudo -u postgres psql -d colibri -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+```
+
 ---
 
 ## 3. Clone and build the project
@@ -77,14 +83,53 @@ CORS_ORIGIN=https://colibri.gabitosoft.com
 
 ---
 
-## 5. Start the API with PM2
+## 5. Run database migrations
+
+Migrations live in `apps/api/src/migrations/` and are tracked in a `migrations` table TypeORM creates automatically.
 
 ```bash
 cd /var/www/colibri.gabitosoft.com
-pm2 start apps/api/dist/main.js --name colibri-api
+npm run migration:run --workspace=apps/api
+```
+
+Expected output — one line per statement, ending with:
+
+```
+Migration InitialSchema1747612800000 has been executed successfully.
+```
+
+To undo the last migration if something goes wrong:
+
+```bash
+npm run migration:revert --workspace=apps/api
+```
+
+### Adding migrations in the future (locally)
+
+After changing an entity, generate a migration against the local dev database:
+
+```bash
+cd apps/api
+npm run migration:generate --name=describe-your-change
+```
+
+Review the generated file in `src/migrations/` before committing — TypeORM can emit destructive `DROP` statements if it misreads a column rename. Then build, commit, and run `migration:run` on the server as part of the redeployment step.
+
+---
+
+## 6. Start the API with PM2
+
+Pass the `.env` path explicitly so PM2 finds it regardless of working directory:
+
+```bash
+pm2 start /var/www/colibri.gabitosoft.com/apps/api/dist/main.js \
+  --name colibri-api \
+  --node-args="--env-file=/var/www/colibri.gabitosoft.com/apps/api/.env"
 pm2 save
 pm2 startup   # follow the printed command to enable auto-start on reboot
 ```
+
+> If the project is cloned into the user's home directory instead (e.g. `/home/deployer/colibri`), adjust both paths accordingly.
 
 Useful PM2 commands:
 
@@ -96,7 +141,7 @@ pm2 restart colibri-api # restart after a redeploy
 
 ---
 
-## 6. Nginx — phase 1 (HTTP only)
+## 7. Nginx — phase 1 (HTTP only)
 
 **Do this before running Certbot.** Certbot needs Nginx running to complete the ACME challenge.
 
@@ -142,7 +187,7 @@ nginx -t && systemctl restart nginx
 
 ---
 
-## 7. SSL certificate with Certbot
+## 8. SSL certificate with Certbot
 
 ```bash
 certbot --nginx -d colibri.gabitosoft.com
@@ -170,7 +215,7 @@ Never let Certbot produce a block that listens on `443` **and** contains a `retu
 
 ---
 
-## 8. Firewall
+## 9. Firewall
 
 ```bash
 ufw allow OpenSSH
@@ -183,7 +228,7 @@ Port 3000 must **not** be open publicly — Nginx proxies all traffic to it inte
 
 ---
 
-## 9. Verify the deployment
+## 10. Verify the deployment
 
 ```bash
 # Check Nginx config is valid
@@ -204,17 +249,18 @@ pm2 logs colibri-api --lines 50
 
 ---
 
-## 10. Redeployment (future updates)
+## 11. Redeployment (future updates)
 
 ```bash
 cd /var/www/colibri.gabitosoft.com
 git pull
 npm ci --workspaces
 npm run build
+npm run migration:run --workspace=apps/api
 pm2 restart colibri-api
 ```
 
-No Nginx reload needed unless the config changed.
+No Nginx reload needed unless the config changed. `migration:run` is a no-op if there are no new migrations, so it's safe to include on every deploy.
 
 ---
 
