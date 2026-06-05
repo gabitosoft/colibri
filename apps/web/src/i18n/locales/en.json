@@ -53,6 +53,11 @@
       "loadingHistory": "Loading…",
       "noRecords": "No records for this period.",
       "historyTitle": "Location history",
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "total": "{{count}} records"
+      },
       "table": {
         "recordedAt": "Recorded at",
         "latitude": "Latitude",

@@ -53,6 +53,11 @@
       "loadingHistory": "Cargando…",
       "noRecords": "Sin registros para este período.",
       "historyTitle": "Historial de ubicaciones",
+      "pagination": {
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "total": "{{count}} registros"
+      },
       "table": {
         "recordedAt": "Registrado el",
         "latitude": "Latitud",

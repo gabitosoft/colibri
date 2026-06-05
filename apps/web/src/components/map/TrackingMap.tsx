@@ -130,12 +130,15 @@ export default function TrackingMap({ records, selectedRecord, liveRecord, conne
     );
   }
 
-  const allRecords = hasHistory ? records : [liveRecord!];
+  // API now returns DESC (newest first); reverse to get chronological order for the map
+  const ascRecords = hasHistory ? [...records].reverse() : [];
+  const allRecords = ascRecords.length > 0 ? ascRecords : [liveRecord!];
   const positions = allRecords.map((r) => [Number(r.latitude), Number(r.longitude)] as [number, number]);
-  const historyPositions = records.map((r) => [Number(r.latitude), Number(r.longitude)] as [number, number]);
+  const historyPositions = ascRecords.map((r) => [Number(r.latitude), Number(r.longitude)] as [number, number]);
   const first = historyPositions[0];
   const last = historyPositions[historyPositions.length - 1];
-  const latest = records[records.length - 1];
+  // Oldest in ASC = index 0 = newest in DESC = last in records array
+  const latest = records[0];
   const center = positions[positions.length - 1];
 
   return (

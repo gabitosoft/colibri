@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devicesApi } from '../api/devices.api';
-import type { Device, LocationHistory } from '../api/devices.api';
+import type { Device, LocationHistory, LocationQueryParams } from '../api/devices.api';
 
 interface DevicesState {
   devices: Device[];
@@ -9,7 +9,7 @@ interface DevicesState {
   addDevice: (name: string, description?: string) => Promise<Device>;
   removeDevice: (id: string) => Promise<void>;
   locationHistories: Record<string, LocationHistory>;
-  fetchHistory: (deviceId: string, params?: { from?: string; to?: string }) => Promise<void>;
+  fetchHistory: (deviceId: string, params?: LocationQueryParams) => Promise<void>;
 }
 
 export const useDevicesStore = create<DevicesState>((set, get) => ({

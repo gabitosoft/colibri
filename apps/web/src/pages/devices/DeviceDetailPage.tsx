@@ -9,6 +9,8 @@ import TrackingMap from '../../components/map/TrackingMap';
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
 import { useLocationSocket } from '../../hooks/useLocationSocket';
 
+const PAGE_SIZE = 25;
+
 function hoursAgoISO(h: number) {
   return new Date(Date.now() - h * 3600_000).toISOString();
 }
@@ -27,6 +29,7 @@ export default function DeviceDetailPage() {
   const [loadingDevice, setLoadingDevice] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [preset, setPreset] = useState(0);
+  const [page, setPage] = useState(0);
   const [selectedRecord, setSelectedRecord] = useState<LocationRecord | null>(null);
   const { liveRecord, connected } = useLocationSocket(id);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -39,19 +42,39 @@ export default function DeviceDetailPage() {
 
   const history = id ? locationHistories[id] : undefined;
   const records = history?.records ?? [];
+  const total = history?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Load device info
   useEffect(() => {
     if (!id) return;
-    devicesApi.get(id).then(({ data }) => setDevice(data)).finally(() => setLoadingDevice(false));
+    setLoadingDevice(true);
+    devicesApi
+      .get(id)
+      .then(({ data }) => setDevice(data))
+      .catch(() => setDevice(null))
+      .finally(() => setLoadingDevice(false));
   }, [id]);
 
+  // Reset page + selection when preset or device changes
+  useEffect(() => {
+    setPage(0);
+    setSelectedRecord(null);
+  }, [id, preset]);
+
+  // Fetch history whenever device, preset or page changes
   useEffect(() => {
     if (!id) return;
     setLoadingHistory(true);
     setSelectedRecord(null);
-    fetchHistory(id, { from: hoursAgoISO(PRESETS[preset].hours), to: new Date().toISOString() })
-      .finally(() => setLoadingHistory(false));
-  }, [id, preset, fetchHistory]);
+    fetchHistory(id, {
+      from: hoursAgoISO(PRESETS[preset].hours),
+      to: new Date().toISOString(),
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    }).finally(() => setLoadingHistory(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, preset, page, fetchHistory]);
 
   if (loadingDevice) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">{t('devices.detail.loading')}</div>;
@@ -60,6 +83,9 @@ export default function DeviceDetailPage() {
   if (!device) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-red-400">{t('devices.detail.notFound')}</div>;
   }
+
+  const canPrev = page > 0;
+  const canNext = page < totalPages - 1;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -93,12 +119,12 @@ export default function DeviceDetailPage() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-400 mb-1">{t('devices.detail.totalPoints')}</p>
-            <p className="text-2xl font-bold text-gray-900">{records.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{total}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-400 mb-1">{t('devices.detail.latestRecord')}</p>
             <p className="text-sm text-gray-700">
-              {records.length > 0 ? formatDate(records[records.length - 1].recordedAt) : t('devices.detail.noDate')}
+              {records.length > 0 ? formatDate(records[0].recordedAt) : t('devices.detail.noDate')}
             </p>
           </div>
         </div>
@@ -129,53 +155,116 @@ export default function DeviceDetailPage() {
 
         {/* Location history table */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-900">{t('devices.detail.historyTitle')}</h2>
+            {total > 0 && (
+              <span className="text-xs text-gray-400">
+                {t('devices.detail.pagination.total', { count: total })}
+              </span>
+            )}
           </div>
+
           {records.length === 0 ? (
             <div className="py-12 text-center text-sm text-gray-400">
               {t('devices.detail.noRecords')}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-100 text-gray-400 text-left">
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.recordedAt')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.latitude')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.longitude')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.speed')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.heading')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.accuracy')}</th>
-                    <th className="px-5 py-3 font-medium">{t('devices.detail.table.altitude')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...records].reverse().map((r) => (
-                    <tr
-                      key={r.id}
-                      onClick={() => {
-                        setSelectedRecord(r);
-                        mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`border-b border-gray-50 cursor-pointer transition-colors ${
-                        selectedRecord?.id === r.id
-                          ? 'bg-yellow-50 border-l-2 border-l-yellow-400'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{formatDate(r.recordedAt)}</td>
-                      <td className="px-5 py-3 font-mono text-gray-700">{Number(r.latitude).toFixed(7)}</td>
-                      <td className="px-5 py-3 font-mono text-gray-700">{Number(r.longitude).toFixed(7)}</td>
-                      <td className="px-5 py-3 text-gray-600">{r.speed != null ? Number(r.speed).toFixed(2) : '—'}</td>
-                      <td className="px-5 py-3 text-gray-600">{r.heading != null ? Number(r.heading).toFixed(1) : '—'}</td>
-                      <td className="px-5 py-3 text-gray-600">{r.accuracy != null ? Number(r.accuracy).toFixed(0) : '—'}</td>
-                      <td className="px-5 py-3 text-gray-600">{r.altitude != null ? Number(r.altitude).toFixed(1) : '—'}</td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-gray-400 text-left">
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.recordedAt')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.latitude')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.longitude')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.speed')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.heading')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.accuracy')}</th>
+                      <th className="px-5 py-3 font-medium">{t('devices.detail.table.altitude')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {records.map((r) => (
+                      <tr
+                        key={r.id}
+                        onClick={() => {
+                          setSelectedRecord(r);
+                          mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        className={`border-b border-gray-50 cursor-pointer transition-colors ${
+                          selectedRecord?.id === r.id
+                            ? 'bg-yellow-50 border-l-2 border-l-yellow-400'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{formatDate(r.recordedAt)}</td>
+                        <td className="px-5 py-3 font-mono text-gray-700">{Number(r.latitude).toFixed(7)}</td>
+                        <td className="px-5 py-3 font-mono text-gray-700">{Number(r.longitude).toFixed(7)}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.speed != null ? Number(r.speed).toFixed(2) : '—'}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.heading != null ? Number(r.heading).toFixed(1) : '—'}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.accuracy != null ? Number(r.accuracy).toFixed(0) : '—'}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.altitude != null ? Number(r.altitude).toFixed(1) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination controls */}
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={!canPrev || loadingHistory}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-600 hover:border-blue-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← {t('devices.detail.pagination.prev')}
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => {
+                    // Always show first, last, current ±1, and ellipsis otherwise
+                    const showPage =
+                      i === 0 ||
+                      i === totalPages - 1 ||
+                      Math.abs(i - page) <= 1;
+                    const showEllipsisBefore = i === 1 && page > 3;
+                    const showEllipsisAfter = i === totalPages - 2 && page < totalPages - 4;
+
+                    if (!showPage) return null;
+
+                    return (
+                      <span key={i}>
+                        {showEllipsisBefore && (
+                          <span className="px-1 text-xs text-gray-400">…</span>
+                        )}
+                        <button
+                          onClick={() => setPage(i)}
+                          disabled={loadingHistory}
+                          className={`min-w-[28px] h-7 rounded-md text-xs font-medium transition-colors disabled:opacity-40 ${
+                            i === page
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                        {showEllipsisAfter && (
+                          <span className="px-1 text-xs text-gray-400">…</span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={!canNext || loadingHistory}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-600 hover:border-blue-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {t('devices.detail.pagination.next')} →
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
