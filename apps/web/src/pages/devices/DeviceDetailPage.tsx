@@ -7,6 +7,7 @@ import { devicesApi } from '../../api/devices.api';
 import type { Device } from '../../api/devices.api';
 import TrackingMap from '../../components/map/TrackingMap';
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
+import { useLocationSocket } from '../../hooks/useLocationSocket';
 
 function hoursAgoISO(h: number) {
   return new Date(Date.now() - h * 3600_000).toISOString();
@@ -26,6 +27,7 @@ export default function DeviceDetailPage() {
   const [loadingDevice, setLoadingDevice] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [preset, setPreset] = useState(0);
+  const { liveRecord, connected } = useLocationSocket(id);
 
   const PRESETS = [
     { label: t('devices.presets.24h'), hours: 24 },
@@ -119,7 +121,7 @@ export default function DeviceDetailPage() {
 
         {/* Map */}
         <div className="h-96 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-          <TrackingMap records={records} />
+          <TrackingMap records={records} liveRecord={liveRecord} connected={connected} />
         </div>
 
         {/* Location history table */}

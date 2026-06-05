@@ -1,20 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, Repository } from 'typeorm';
 import { LocationRecord } from './entities/location-record.entity';
 import { PushLocationDto } from './dto/push-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
+import { LocationsGateway } from './locations.gateway';
 
 @Injectable()
 export class LocationsService {
   constructor(
     @InjectRepository(LocationRecord)
     private readonly repo: Repository<LocationRecord>,
+    @Optional() private readonly gateway: LocationsGateway,
   ) {}
 
-  push(deviceId: string, dto: PushLocationDto) {
+  async push(deviceId: string, dto: PushLocationDto) {
     const record = this.repo.create({ ...dto, deviceId });
-    return this.repo.save(record);
+    const saved = await this.repo.save(record);
+    // Broadcast to any connected WebSocket clients watching this device
+    this.gateway?.emitLocationUpdate(deviceId, saved);
+    return saved;
   }
 
   async findHistory(deviceId: string, query: LocationQueryDto) {

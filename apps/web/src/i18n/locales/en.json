@@ -73,6 +73,9 @@
     "noData": "No location data to display",
     "start": "Start",
     "latestPosition": "Latest position",
+    "livePosition": "Live position",
+    "liveConnected": "Live",
+    "liveDisconnected": "Offline",
     "speed": "Speed: {{value}} m/s",
     "accuracy": "Accuracy: ±{{value}} m"
   }
