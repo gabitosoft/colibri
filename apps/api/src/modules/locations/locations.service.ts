@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsWhere, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Repository } from 'typeorm';
 import { LocationRecord } from './entities/location-record.entity';
 import { PushLocationDto } from './dto/push-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
@@ -27,6 +27,10 @@ export class LocationsService {
 
     if (query.from && query.to) {
       where.recordedAt = Between(new Date(query.from), new Date(query.to));
+    } else if (query.from) {
+      where.recordedAt = MoreThanOrEqual(new Date(query.from));
+    } else if (query.to) {
+      where.recordedAt = LessThanOrEqual(new Date(query.to));
     }
 
     const [records, total] = await this.repo.findAndCount({

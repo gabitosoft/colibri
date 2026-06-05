@@ -46,7 +46,7 @@ export default function DeviceDetailPage() {
   useEffect(() => {
     if (!id) return;
     setLoadingHistory(true);
-    fetchHistory(id, { from: hoursAgoISO(PRESETS[preset].hours) })
+    fetchHistory(id, { from: hoursAgoISO(PRESETS[preset].hours), to: new Date().toISOString() })
       .finally(() => setLoadingHistory(false));
   }, [id, preset, fetchHistory]);
 
