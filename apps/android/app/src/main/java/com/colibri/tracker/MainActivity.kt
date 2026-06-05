@@ -40,7 +40,8 @@ class MainActivity : AppCompatActivity() {
             val coords = intent.getStringExtra(LocationService.EXTRA_LAST_COORDS)
             val sent = intent.getIntExtra(LocationService.EXTRA_SENT_COUNT, 0)
             val errors = intent.getIntExtra(LocationService.EXTRA_ERROR_COUNT, 0)
-            updateStatusUI(coords, sent, errors)
+            val skipped = intent.getIntExtra(LocationService.EXTRA_SKIPPED_COUNT, 0)
+            updateStatusUI(coords, sent, errors, skipped)
         }
     }
 
@@ -238,9 +239,9 @@ class MainActivity : AppCompatActivity() {
         binding.tvLastCoords.text = if (!tracking) "—" else binding.tvLastCoords.text
     }
 
-    private fun updateStatusUI(coords: String?, sent: Int, errors: Int) {
+    private fun updateStatusUI(coords: String?, sent: Int, errors: Int, skipped: Int = 0) {
         binding.tvLastCoords.text = coords ?: "Error sending"
-        binding.tvSentCount.text = "Sent: $sent  |  Errors: $errors"
+        binding.tvSentCount.text = "Sent: $sent  |  Skipped: $skipped  |  Errors: $errors"
     }
 
     private fun showPermissionRationale() {
