@@ -1,29 +1,81 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { APIProvider, Map, Polyline, AdvancedMarker, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import 'leaflet/dist/leaflet.css';
 import type { LocationRecord } from '../../api/devices.api';
+
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 
 interface Props {
   records: LocationRecord[];
 }
 
-function FitBounds({ records }: { records: LocationRecord[] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (records.length === 0) return;
-    const lats = records.map((r) => Number(r.latitude));
-    const lngs = records.map((r) => Number(r.longitude));
-    map.fitBounds(
-      [[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]],
-      { padding: [32, 32] },
-    );
-  }, [records, map]);
-  return null;
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString();
+}
+
+function computeBounds(records: LocationRecord[]) {
+  const lats = records.map((r) => Number(r.latitude));
+  const lngs = records.map((r) => Number(r.longitude));
+  return {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lngs),
+    west: Math.min(...lngs),
+  };
+}
+
+function StartMarker({ record }: { record: LocationRecord }) {
+  const { t } = useTranslation();
+  const [markerRef, marker] = useAdvancedMarkerRef();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <AdvancedMarker
+        ref={markerRef}
+        position={{ lat: Number(record.latitude), lng: Number(record.longitude) }}
+        onClick={() => setOpen(true)}
+      >
+        <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#22c55e', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+      </AdvancedMarker>
+      {open && (
+        <InfoWindow anchor={marker} onClose={() => setOpen(false)}>
+          <p style={{ margin: 0 }}>{t('map.start')}</p>
+          <p style={{ margin: 0, fontSize: 12 }}>{formatDate(record.recordedAt)}</p>
+        </InfoWindow>
+      )}
+    </>
+  );
+}
+
+function LatestMarker({ record }: { record: LocationRecord }) {
+  const { t } = useTranslation();
+  const [markerRef, marker] = useAdvancedMarkerRef();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <AdvancedMarker
+        ref={markerRef}
+        position={{ lat: Number(record.latitude), lng: Number(record.longitude) }}
+        onClick={() => setOpen(true)}
+      >
+        <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#3b82f6', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+      </AdvancedMarker>
+      {open && (
+        <InfoWindow anchor={marker} onClose={() => setOpen(false)}>
+          <strong>{t('map.latestPosition')}</strong>
+          <p style={{ margin: '4px 0 0', fontSize: 12 }}>{formatDate(record.recordedAt)}</p>
+          {record.speed != null && (
+            <p style={{ margin: '2px 0 0', fontSize: 12 }}>{t('map.speed', { value: Number(record.speed).toFixed(1) })}</p>
+          )}
+          {record.accuracy != null && (
+            <p style={{ margin: '2px 0 0', fontSize: 12 }}>{t('map.accuracy', { value: Number(record.accuracy).toFixed(0) })}</p>
+          )}
+        </InfoWindow>
+      )}
+    </>
+  );
 }
 
 export default function TrackingMap({ records }: Props) {
@@ -37,37 +89,28 @@ export default function TrackingMap({ records }: Props) {
     );
   }
 
-  const positions = records.map((r) => [Number(r.latitude), Number(r.longitude)] as [number, number]);
-  const first = positions[0];
-  const last = positions[positions.length - 1];
+  const path = records.map((r) => ({ lat: Number(r.latitude), lng: Number(r.longitude) }));
+  const bounds = computeBounds(records);
   const latest = records[records.length - 1];
 
   return (
-    <MapContainer
-      center={last}
-      zoom={13}
-      style={{ height: '100%', width: '100%', borderRadius: '0.75rem' }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FitBounds records={records} />
-
-      <Polyline positions={positions} color="#3b82f6" weight={3} opacity={0.8} />
-
-      <CircleMarker center={first} radius={7} color="#22c55e" fillColor="#22c55e" fillOpacity={1}>
-        <Popup>{t('map.start')}<br />{formatDate(records[0].recordedAt)}</Popup>
-      </CircleMarker>
-
-      <CircleMarker center={last} radius={9} color="#3b82f6" fillColor="#3b82f6" fillOpacity={1}>
-        <Popup>
-          <strong>{t('map.latestPosition')}</strong><br />
-          {formatDate(latest.recordedAt)}<br />
-          {latest.speed != null && <>{t('map.speed', { value: Number(latest.speed).toFixed(1) })}<br /></>}
-          {latest.accuracy != null && <>{t('map.accuracy', { value: Number(latest.accuracy).toFixed(0) })}</>}
-        </Popup>
-      </CircleMarker>
-    </MapContainer>
+    <APIProvider apiKey={API_KEY}>
+      <Map
+        style={{ height: '100%', width: '100%', borderRadius: '0.75rem' }}
+        defaultBounds={bounds}
+        mapId="colibri-tracking"
+        gestureHandling="greedy"
+        disableDefaultUI={false}
+      >
+        <Polyline
+          path={path}
+          strokeColor="#3b82f6"
+          strokeWeight={3}
+          strokeOpacity={0.8}
+        />
+        <StartMarker record={records[0]} />
+        {records.length > 1 && <LatestMarker record={latest} />}
+      </Map>
+    </APIProvider>
   );
 }

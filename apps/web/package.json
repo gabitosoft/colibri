@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@colibri/shared": "*",
+    "@vis.gl/react-google-maps": "^1.8.3",
     "axios": "^1.7.9",
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",
