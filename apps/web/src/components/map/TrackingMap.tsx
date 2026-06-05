@@ -7,13 +7,14 @@ import type { LocationRecord } from '../../api/devices.api';
 
 interface Props {
   records: LocationRecord[];
+  /** Record selected from the history table — map pans & highlights it */
+  selectedRecord?: LocationRecord | null;
   /** Live record streamed via WebSocket — shown as a pulsing marker */
   liveRecord?: LocationRecord | null;
   /** Whether the WebSocket is currently connected */
   connected?: boolean;
 }
 
-// Pulsing live marker icon built from a CSS div
 function createLiveIcon() {
   return L.divIcon({
     className: '',
@@ -33,6 +34,28 @@ function createLiveIcon() {
     iconSize: [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -14],
+  });
+}
+
+function createSelectedIcon() {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          position:absolute;width:32px;height:32px;border-radius:50%;
+          background:rgba(234,179,8,0.25);
+          animation:colibri-pulse 1.5s ease-out infinite;
+        "></div>
+        <div style="
+          width:16px;height:16px;border-radius:50%;
+          background:#eab308;border:2.5px solid white;
+          box-shadow:0 1px 6px rgba(0,0,0,0.45);
+        "></div>
+      </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
   });
 }
 
@@ -62,17 +85,42 @@ function PanToLive({ record }: { record: LocationRecord }) {
   return null;
 }
 
+function PanToSelected({ record }: { record: LocationRecord }) {
+  const map = useMap();
+  const prevRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = record.id;
+    if (key === prevRef.current) return;
+    prevRef.current = key;
+    map.flyTo([Number(record.latitude), Number(record.longitude)], Math.max(map.getZoom(), 15), {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [record, map]);
+  return null;
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString();
 }
 
 const liveIcon = createLiveIcon();
+const selectedIcon = createSelectedIcon();
 
-export default function TrackingMap({ records, liveRecord, connected }: Props) {
+export default function TrackingMap({ records, selectedRecord, liveRecord, connected }: Props) {
   const { t } = useTranslation();
+  const selectedMarkerRef = useRef<L.Marker | null>(null);
+
+  // Auto-open the popup whenever selectedRecord changes
+  useEffect(() => {
+    if (selectedMarkerRef.current) {
+      selectedMarkerRef.current.openPopup();
+    }
+  }, [selectedRecord]);
 
   const hasHistory = records.length > 0;
   const hasLive = liveRecord != null;
+  const hasSelected = selectedRecord != null;
 
   if (!hasHistory && !hasLive) {
     return (
@@ -92,7 +140,6 @@ export default function TrackingMap({ records, liveRecord, connected }: Props) {
 
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-      {/* Inject pulse keyframe once */}
       <style>{`
         @keyframes colibri-pulse {
           0%   { transform: scale(0.8); opacity: 1; }
@@ -126,8 +173,9 @@ export default function TrackingMap({ records, liveRecord, connected }: Props) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {hasHistory && <FitBounds records={records} />}
-        {hasLive && <PanToLive record={liveRecord!} />}
+        {hasHistory && !hasSelected && <FitBounds records={records} />}
+        {hasLive && !hasSelected && <PanToLive record={liveRecord!} />}
+        {hasSelected && <PanToSelected record={selectedRecord!} />}
 
         {/* Historical track */}
         {hasHistory && (
@@ -147,6 +195,23 @@ export default function TrackingMap({ records, liveRecord, connected }: Props) {
               </Popup>
             </CircleMarker>
           </>
+        )}
+
+        {/* Selected record marker — yellow pulsing dot */}
+        {hasSelected && (
+          <Marker
+            position={[Number(selectedRecord!.latitude), Number(selectedRecord!.longitude)]}
+            icon={selectedIcon}
+            zIndexOffset={900}
+            ref={(m) => { selectedMarkerRef.current = m; }}
+          >
+            <Popup>
+              <strong style={{ color: '#ca8a04' }}>{t('map.selectedPosition')}</strong><br />
+              {formatDate(selectedRecord!.recordedAt)}<br />
+              {selectedRecord!.speed != null && <>{t('map.speed', { value: Number(selectedRecord!.speed).toFixed(1) })}<br /></>}
+              {selectedRecord!.accuracy != null && <>{t('map.accuracy', { value: Number(selectedRecord!.accuracy).toFixed(0) })}</>}
+            </Popup>
+          </Marker>
         )}
 
         {/* Live position marker — pulsing red dot */}

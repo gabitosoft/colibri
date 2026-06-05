@@ -73,6 +73,7 @@
     "noData": "No location data to display",
     "start": "Start",
     "latestPosition": "Latest position",
+    "selectedPosition": "Selected position",
     "livePosition": "Live position",
     "liveConnected": "Live",
     "liveDisconnected": "Offline",

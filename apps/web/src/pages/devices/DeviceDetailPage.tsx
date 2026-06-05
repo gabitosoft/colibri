@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { useDevicesStore } from '../../stores/devices.store';
 import { devicesApi } from '../../api/devices.api';
-import type { Device } from '../../api/devices.api';
+import type { Device, LocationRecord } from '../../api/devices.api';
 import TrackingMap from '../../components/map/TrackingMap';
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
 import { useLocationSocket } from '../../hooks/useLocationSocket';
@@ -27,7 +27,9 @@ export default function DeviceDetailPage() {
   const [loadingDevice, setLoadingDevice] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [preset, setPreset] = useState(0);
+  const [selectedRecord, setSelectedRecord] = useState<LocationRecord | null>(null);
   const { liveRecord, connected } = useLocationSocket(id);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const PRESETS = [
     { label: t('devices.presets.24h'), hours: 24 },
@@ -46,6 +48,7 @@ export default function DeviceDetailPage() {
   useEffect(() => {
     if (!id) return;
     setLoadingHistory(true);
+    setSelectedRecord(null);
     fetchHistory(id, { from: hoursAgoISO(PRESETS[preset].hours), to: new Date().toISOString() })
       .finally(() => setLoadingHistory(false));
   }, [id, preset, fetchHistory]);
@@ -120,8 +123,8 @@ export default function DeviceDetailPage() {
         </div>
 
         {/* Map */}
-        <div className="h-96 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-          <TrackingMap records={records} liveRecord={liveRecord} connected={connected} />
+        <div ref={mapRef} className="h-96 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+          <TrackingMap records={records} selectedRecord={selectedRecord} liveRecord={liveRecord} connected={connected} />
         </div>
 
         {/* Location history table */}
@@ -149,7 +152,18 @@ export default function DeviceDetailPage() {
                 </thead>
                 <tbody>
                   {[...records].reverse().map((r) => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <tr
+                      key={r.id}
+                      onClick={() => {
+                        setSelectedRecord(r);
+                        mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className={`border-b border-gray-50 cursor-pointer transition-colors ${
+                        selectedRecord?.id === r.id
+                          ? 'bg-yellow-50 border-l-2 border-l-yellow-400'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
                       <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{formatDate(r.recordedAt)}</td>
                       <td className="px-5 py-3 font-mono text-gray-700">{Number(r.latitude).toFixed(7)}</td>
                       <td className="px-5 py-3 font-mono text-gray-700">{Number(r.longitude).toFixed(7)}</td>

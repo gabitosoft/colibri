@@ -73,6 +73,7 @@
     "noData": "Sin datos de ubicación para mostrar",
     "start": "Inicio",
     "latestPosition": "Última posición",
+    "selectedPosition": "Posición seleccionada",
     "livePosition": "Posición en vivo",
     "liveConnected": "En vivo",
     "liveDisconnected": "Sin conexión",
