@@ -1,5 +1,8 @@
-import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+export type SortableColumn = 'recordedAt' | 'latitude' | 'longitude' | 'speed' | 'heading' | 'accuracy' | 'altitude';
+export type SortOrder = 'ASC' | 'DESC';
 
 export class LocationQueryDto {
   @IsDateString()
@@ -22,4 +25,12 @@ export class LocationQueryDto {
   @Min(0)
   @IsOptional()
   offset?: number = 0;
+
+  @IsIn(['recordedAt', 'latitude', 'longitude', 'speed', 'heading', 'accuracy', 'altitude'])
+  @IsOptional()
+  sortBy?: SortableColumn = 'recordedAt';
+
+  @IsIn(['ASC', 'DESC'])
+  @IsOptional()
+  sortOrder?: SortOrder = 'DESC';
 }

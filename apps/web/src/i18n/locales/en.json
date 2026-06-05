@@ -56,7 +56,8 @@
       "pagination": {
         "prev": "Previous",
         "next": "Next",
-        "total": "{{count}} records"
+        "total": "{{count}} records",
+        "rowsPerPage": "Rows per page:"
       },
       "table": {
         "recordedAt": "Recorded at",

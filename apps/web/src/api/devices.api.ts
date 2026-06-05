@@ -35,11 +35,16 @@ export interface CreateDevicePayload {
   description?: string;
 }
 
+export type SortableColumn = 'recordedAt' | 'latitude' | 'longitude' | 'speed' | 'heading' | 'accuracy' | 'altitude';
+export type SortOrder = 'ASC' | 'DESC';
+
 export interface LocationQueryParams {
   from?: string;
   to?: string;
   limit?: number;
   offset?: number;
+  sortBy?: SortableColumn;
+  sortOrder?: SortOrder;
 }
 
 export const devicesApi = {

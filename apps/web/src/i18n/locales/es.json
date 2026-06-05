@@ -56,7 +56,8 @@
       "pagination": {
         "prev": "Anterior",
         "next": "Siguiente",
-        "total": "{{count}} registros"
+        "total": "{{count}} registros",
+        "rowsPerPage": "Filas por página:"
       },
       "table": {
         "recordedAt": "Registrado el",

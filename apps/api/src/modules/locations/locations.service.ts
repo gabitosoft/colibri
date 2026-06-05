@@ -35,7 +35,7 @@ export class LocationsService {
 
     const [records, total] = await this.repo.findAndCount({
       where,
-      order: { recordedAt: 'DESC' },
+      order: { [query.sortBy ?? 'recordedAt']: query.sortOrder ?? 'DESC' },
       take: query.limit,
       skip: query.offset,
     });
