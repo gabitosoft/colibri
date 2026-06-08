@@ -22,7 +22,7 @@ interface UseMapMatchingResult {
  */
 
 const OSRM_BASE = 'https://router.project-osrm.org/match/v1/driving';
-const MAX_WAYPOINTS = 99; // public OSRM server hard limit
+const MAX_WAYPOINTS = 50; // public OSRM match endpoint limit (TooBig error above this)
 const MATCH_RADIUS_M = 30; // metres — how far a GPS point may be from the road
 
 function chunk<T>(arr: T[], size: number, overlap = 0): T[][] {
