@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
-RUN npm ci --ignore-scripts --audit=false
+RUN npm install --ignore-scripts --audit=false
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
