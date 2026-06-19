@@ -1,19 +1,58 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: colibri
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:-colibri}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_NAME: ${DB_NAME:-colibri}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-https://portal.gabitosoft.cloud/authsvc}
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-https://portal.gabitosoft.cloud/authsvc/.well-known/jwks.json}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.gabitosoft.cloud}
+      APP_ORIGIN: ${APP_ORIGIN:-https://colibri.gabitosoft.cloud}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://colibri.gabitosoft.cloud}
+    expose:
+      - "3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_PORTAL_URL: ${PORTAL_URL:-https://portal.gabitosoft.cloud}
+        VITE_PORTAL_COOKIE_NAME: ${PORTAL_COOKIE_NAME:-token}
+        VITE_APP_SLUG: ${APP_SLUG:-colibri}
+    restart: unless-stopped
+    depends_on:
+      - api
+    expose:
+      - "80"
 
 volumes:
   postgres_data:

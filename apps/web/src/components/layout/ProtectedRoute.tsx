@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 
-const PORTAL_LOGIN = 'https://portal.gabitosoft.cloud/login';
-const APP_ORIGIN = window.location.origin;
-const SSO_CALLBACK = `${APP_ORIGIN}/sso/callback`;
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL ?? 'https://portal.gabitosoft.cloud';
+const APP_SLUG = import.meta.env.VITE_APP_SLUG ?? 'colibri';
+const PORTAL_COOKIE_NAME = import.meta.env.VITE_PORTAL_COOKIE_NAME ?? 'token';
+const PORTAL_LOGIN = `${PORTAL_URL}/login`;
+const SSO_CALLBACK = `${window.location.origin}/sso/callback`;
 
 function getCookie(name: string): string | undefined {
   return document.cookie
@@ -31,14 +33,14 @@ function isTokenValid(token: string): boolean {
 function redirectToPortalLogin() {
   const url = new URL(PORTAL_LOGIN);
   url.searchParams.set('returnTo', SSO_CALLBACK);
-  url.searchParams.set('appSlug', 'colibri');
+  url.searchParams.set('appSlug', APP_SLUG);
   window.location.replace(url.toString());
 }
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  const token = getCookie('token');
+  const token = getCookie(PORTAL_COOKIE_NAME);
   const valid = !!token && isTokenValid(token);
 
   useEffect(() => {
