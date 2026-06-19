@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --audit=false
 
 # Copy source and build
 COPY packages/shared ./packages/shared
@@ -22,7 +22,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts --audit=false
 
 # Copy compiled shared so the node_modules/@colibri/shared symlink resolves
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
