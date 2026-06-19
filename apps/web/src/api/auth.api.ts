@@ -8,5 +8,6 @@ export interface LoginPayload {
 
 export const authApi = {
   login: (payload: LoginPayload) => api.post('/auth/login', payload),
+  ssoExchange: (ticket: string) => api.post('/auth/sso/exchange', { ticket }),
   me: () => api.get('/auth/me'),
 };

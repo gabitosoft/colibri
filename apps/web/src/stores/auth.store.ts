@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 interface AuthUser {
   id: string;
@@ -19,18 +18,14 @@ interface AuthState {
   user: AuthUser | null;
   tenant: AuthTenant | null;
   setAuth: (token: string, user: AuthUser, tenant: AuthTenant) => void;
-  logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      tenant: null,
-      setAuth: (token, user, tenant) => set({ token, user, tenant }),
-      logout: () => set({ token: null, user: null, tenant: null }),
-    }),
-    { name: 'colibri-auth' },
-  ),
-);
+// Token lives in the `token` cookie (set by the backend SSO callback).
+// This store is hydrated from the cookie JWT by ProtectedRoute on each render
+// so the rest of the app can read user/tenant without extra API calls.
+export const useAuthStore = create<AuthState>()((set) => ({
+  token: null,
+  user: null,
+  tenant: null,
+  setAuth: (token, user, tenant) => set({ token, user, tenant }),
+}));

@@ -10,7 +10,7 @@ import Toast from '../../components/ui/Toast';
 export default function DeviceListPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, tenant, logout } = useAuthStore();
+  const { user, tenant } = useAuthStore();
   const { devices, loading, fetchDevices, addDevice, removeDevice } = useDevicesStore();
 
   const [showAdd, setShowAdd] = useState(false);
@@ -49,12 +49,12 @@ export default function DeviceListPage() {
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
           <span className="text-sm text-gray-500">{user?.name}</span>
-          <button
-            onClick={() => { logout(); navigate('/login'); }}
+          <a
+            href="https://portal.gabitosoft.cloud"
             className="text-sm text-gray-500 hover:text-gray-900"
           >
-            {t('nav.signOut')}
-          </button>
+            Portal
+          </a>
         </div>
       </nav>
 

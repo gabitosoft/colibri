@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portal-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../portal", "run", "dev", "--workspace=apps/web"],
+      "port": 5173,
+      "autoPort": true
+    }
+  ]
+}

@@ -1,14 +1,7 @@
 import { useAuthStore } from '../../stores/auth.store';
-import { useNavigate } from 'react-router-dom';
 
 export default function DashboardPage() {
-  const { user, tenant, logout } = useAuthStore();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const { user, tenant } = useAuthStore();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,12 +12,12 @@ export default function DashboardPage() {
             <span className="ml-2 text-sm text-gray-500">/ {tenant.name}</span>
           )}
         </div>
-        <button
-          onClick={handleLogout}
+        <a
+          href="https://portal.gabitosoft.cloud"
           className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
-          Sign out
-        </button>
+          Portal
+        </a>
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-10">
