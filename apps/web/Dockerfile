@@ -1,7 +1,9 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# No lockfile: npm resolves platform-specific optional deps (rolldown musl binding)
+# The lockfile was generated on macOS and omits @rolldown/binding-linux-x64-musl
+COPY package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 RUN npm install --audit=false
