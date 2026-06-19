@@ -17,6 +17,7 @@ ENV VITE_PORTAL_URL=$VITE_PORTAL_URL \
     VITE_PORTAL_COOKIE_NAME=$VITE_PORTAL_COOKIE_NAME \
     VITE_APP_SLUG=$VITE_APP_SLUG
 
+RUN npm run build --workspace=packages/shared
 RUN npm run build --workspace=apps/web
 
 # ── Production image ──────────────────────────────────────────────────────────
