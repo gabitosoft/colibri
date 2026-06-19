@@ -4,8 +4,8 @@ import { AppDataSource } from '../database/data-source';
 import { Tenant } from '../modules/tenants/entities/tenant.entity';
 import { User, UserRole } from '../modules/users/entities/user.entity';
 
-const TENANT_SLUG = process.env.SEED_TENANT_SLUG ?? 'colibri';
-const TENANT_NAME = process.env.SEED_TENANT_NAME ?? 'Colibri';
+const TENANT_SLUG = process.env.SEED_TENANT_SLUG ?? 'gabitosoft';
+const TENANT_NAME = process.env.SEED_TENANT_NAME ?? 'Gabitosoft';
 const USER_EMAIL = process.env.SEED_USER_EMAIL ?? 'gabitosoft@gmail.com';
 const USER_NAME = process.env.SEED_USER_NAME ?? 'Gabriel Delgado';
 

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -8,6 +8,8 @@ import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly tenantsService: TenantsService,
@@ -52,6 +54,8 @@ export class AuthService {
       .get<string>('AUTH_BASE_URL', 'http://localhost:3001')
       .replace(/\/$/, '');
 
+    this.logger.log(`SSO exchange — calling ${authBaseUrl}/auth/sso/exchange`);
+
     let res: Response;
     try {
       res = await fetch(`${authBaseUrl}/auth/sso/exchange`, {
@@ -59,20 +63,27 @@ export class AuthService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticket }),
       });
-    } catch {
+    } catch (err) {
+      this.logger.error('SSO provider unreachable', err);
       throw new UnauthorizedException('SSO provider is unreachable');
     }
-    if (!res.ok) throw new UnauthorizedException('Invalid or expired ticket');
+
+    if (!res.ok) {
+      this.logger.error(`Portal exchange returned ${res.status}`);
+      throw new UnauthorizedException('Invalid or expired ticket');
+    }
 
     const data = (await res.json()) as {
       user: { email: string };
       tenant: { slug: string };
     };
+    this.logger.log(`Portal identity — email: ${data.user.email}, tenant: ${data.tenant.slug}`);
 
     const tenant = await this.tenantsService
       .findBySlug(data.tenant.slug)
       .catch(() => null);
     if (!tenant || !tenant.isActive) {
+      this.logger.error(`No active tenant with slug "${data.tenant.slug}" in colibri`);
       throw new UnauthorizedException('No matching tenant in colibri');
     }
 
@@ -81,6 +92,7 @@ export class AuthService {
       tenant.id,
     );
     if (!user || !user.isActive) {
+      this.logger.error(`No active user "${data.user.email}" in tenant "${data.tenant.slug}"`);
       throw new UnauthorizedException('No matching colibri account');
     }
 
