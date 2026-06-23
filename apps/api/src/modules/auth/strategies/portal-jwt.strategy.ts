@@ -24,20 +24,33 @@ export class PortalJwtStrategy extends PassportStrategy(Strategy, 'portal-jwt') 
     private readonly tenantsService: TenantsService,
     private readonly usersService: UsersService,
   ) {
+    // Prefer a statically-configured RS256 public key (PORTAL_JWT_PUBLIC_KEY) so
+    // validation needs no network call to the portal JWKS endpoint. Fall back to
+    // the JWKS endpoint only when the key isn't provided (e.g. local dev).
+    const publicKey = config
+      .get<string>('PORTAL_JWT_PUBLIC_KEY')
+      ?.replace(/\\n/g, '\n');
+
+    const keyOptions = publicKey
+      ? { secretOrKey: publicKey }
+      : {
+          secretOrKeyProvider: passportJwtSecret({
+            cache: true,
+            rateLimit: true,
+            jwksRequestsPerMinute: 10,
+            jwksUri:
+              config.get<string>('AUTH_JWKS_URL') ??
+              'http://localhost:3001/.well-known/jwks.json',
+          }),
+        };
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKeyProvider: passportJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 10,
-        jwksUri:
-          config.get<string>('AUTH_JWKS_URL') ??
-          'http://localhost:3001/.well-known/jwks.json',
-      }),
       algorithms: ['RS256'],
       issuer: config.get('AUTH_JWT_ISSUER', 'http://localhost:3001'),
       audience: 'portal',
+      ...keyOptions,
     });
   }
 
