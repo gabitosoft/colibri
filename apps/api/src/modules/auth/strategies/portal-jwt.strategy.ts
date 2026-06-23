@@ -8,6 +8,17 @@ import { UsersService } from '../../users/users.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { PortalJwtPayload } from '../interfaces/portal-jwt-payload.interface';
 
+// Resolves the portal public key from env. Accepts a PEM (with real or escaped
+// "\n" newlines) OR a base64-encoded PEM — the latter is a single newline-free
+// string, which avoids .env quoting/line-break problems on most platforms.
+function resolvePortalPublicKey(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const v = raw.trim();
+  return v.includes('BEGIN')
+    ? v.replace(/\\n/g, '\n')
+    : Buffer.from(v, 'base64').toString('utf8');
+}
+
 // Accepts RS256 tokens issued by the portal identity provider, verified
 // against its JWKS endpoint — colibri never holds the portal's signing key.
 //
@@ -27,9 +38,9 @@ export class PortalJwtStrategy extends PassportStrategy(Strategy, 'portal-jwt') 
     // Prefer a statically-configured RS256 public key (PORTAL_JWT_PUBLIC_KEY) so
     // validation needs no network call to the portal JWKS endpoint. Fall back to
     // the JWKS endpoint only when the key isn't provided (e.g. local dev).
-    const publicKey = config
-      .get<string>('PORTAL_JWT_PUBLIC_KEY')
-      ?.replace(/\\n/g, '\n');
+    const publicKey = resolvePortalPublicKey(
+      config.get<string>('PORTAL_JWT_PUBLIC_KEY'),
+    );
 
     const keyOptions = publicKey
       ? { secretOrKey: publicKey }
