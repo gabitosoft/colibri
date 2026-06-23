@@ -46,9 +46,12 @@ export class AuthService {
   }
 
   // SSO handoff from the portal: redeem the one-time ticket server-to-server,
-  // map the portal identity to a local account (email + tenant slug — IDs
-  // differ between systems), and issue a regular colibri session token so the
-  // rest of the app works exactly as after a password login.
+  // confirm the portal identity maps to an active local account (email +
+  // tenant slug — IDs differ between systems), then hand back the PORTAL's own
+  // RS256 access token. That token becomes the shared `.gabitosoft.cloud`
+  // cookie, so every linked app carries the identical portal token (validated
+  // here via PortalJwtStrategy/JWKS). Re-minting a colibri-local token here
+  // would clobber the shared cookie and break the other apps.
   async ssoExchange(ticket: string) {
     const authBaseUrl = this.config
       .get<string>('AUTH_BASE_URL', 'http://localhost:3001')
@@ -74,6 +77,7 @@ export class AuthService {
     }
 
     const data = (await res.json()) as {
+      accessToken: string;
       user: { email: string };
       tenant: { slug: string };
     };
@@ -96,17 +100,9 @@ export class AuthService {
       throw new UnauthorizedException('No matching colibri account');
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-      tenantId: user.tenantId,
-      tenantSlug: tenant.slug,
-      role: user.role,
-    };
-
+    // Pass the portal token through unchanged — do NOT re-sign locally.
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: data.accessToken,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
       tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
     };

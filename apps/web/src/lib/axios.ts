@@ -23,15 +23,41 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Single-flight silent refresh against the portal: when the shared access
+// cookie has expired, the portal renews it from the httpOnly `rt` cookie.
+let refreshPromise: Promise<boolean> | null = null;
+
+export async function refreshSession(): Promise<boolean> {
+  try {
+    await axios.post(`${PORTAL_URL}/authsvc/auth/refresh-cookie`, null, {
+      withCredentials: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function redirectToPortalLogin() {
+  const url = new URL(`${PORTAL_URL}/login`);
+  url.searchParams.set('returnTo', `${window.location.origin}/sso/callback`);
+  url.searchParams.set('appSlug', APP_SLUG);
+  window.location.replace(url.toString());
+}
+
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      const returnTo = `${window.location.origin}/sso/callback`;
-      const url = new URL(`${PORTAL_URL}/login`);
-      url.searchParams.set('returnTo', returnTo);
-      url.searchParams.set('appSlug', APP_SLUG);
-      window.location.replace(url.toString());
+  async (err) => {
+    const original = err.config as
+      | (typeof err.config & { _retry?: boolean })
+      | undefined;
+    if (err.response?.status === 401 && original && !original._retry) {
+      original._retry = true;
+      refreshPromise ??= refreshSession().finally(() => {
+        refreshPromise = null;
+      });
+      if (await refreshPromise) return api(original);
+      redirectToPortalLogin();
     }
     return Promise.reject(err);
   },

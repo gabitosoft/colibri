@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
+import { refreshSession } from '../../lib/axios';
 
 const PORTAL_URL = import.meta.env.VITE_PORTAL_URL ?? 'https://portal.gabitosoft.cloud';
 const APP_SLUG = import.meta.env.VITE_APP_SLUG ?? 'colibri';
@@ -39,40 +40,56 @@ function redirectToPortalLogin() {
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const setAuth = useAuthStore((s) => s.setAuth);
-
-  const token = getCookie(PORTAL_COOKIE_NAME);
-  const valid = !!token && isTokenValid(token);
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    if (!valid) {
-      redirectToPortalLogin();
-      return;
-    }
+    let active = true;
 
-    // Hydrate the store from the JWT so pages can read user/tenant without
-    // an extra API call.
-    const payload = decodeJwtPayload(token!) as {
-      sub: string;
-      email: string;
-      name?: string;
-      tenantId: string;
-      tenantSlug?: string;
-      role: string;
+    (async () => {
+      let token = getCookie(PORTAL_COOKIE_NAME);
+
+      // No valid access cookie — try a silent refresh (the portal renews it from
+      // the httpOnly `rt` cookie) before bouncing to the portal login.
+      if (!token || !isTokenValid(token)) {
+        const ok = await refreshSession();
+        token = ok ? getCookie(PORTAL_COOKIE_NAME) : undefined;
+        if (!token || !isTokenValid(token)) {
+          redirectToPortalLogin();
+          return;
+        }
+      }
+
+      // Hydrate the store from the JWT so pages can read user/tenant without
+      // an extra API call.
+      const payload = decodeJwtPayload(token) as {
+        sub: string;
+        email: string;
+        name?: string;
+        tenantId: string;
+        tenantSlug?: string;
+        role: string;
+      };
+
+      setAuth(token, {
+        id: payload.sub,
+        name: payload.name ?? payload.email,
+        email: payload.email,
+        role: payload.role,
+      }, {
+        id: payload.tenantId,
+        slug: payload.tenantSlug ?? '',
+        name: payload.tenantSlug ?? '',
+      });
+
+      if (active) setAuthed(true);
+    })();
+
+    return () => {
+      active = false;
     };
+  }, [setAuth]);
 
-    setAuth(token!, {
-      id: payload.sub,
-      name: payload.name ?? payload.email,
-      email: payload.email,
-      role: payload.role,
-    }, {
-      id: payload.tenantId,
-      slug: payload.tenantSlug ?? '',
-      name: payload.tenantSlug ?? '',
-    });
-  }, [valid, token, setAuth]);
-
-  if (!valid) return null;
+  if (!authed) return null;
 
   return <>{children}</>;
 }
