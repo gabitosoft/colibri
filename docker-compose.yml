@@ -34,6 +34,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       AUTH_BASE_URL: ${AUTH_BASE_URL:-https://portal.gabitosoft.cloud/authsvc}
       AUTH_JWKS_URL: ${AUTH_JWKS_URL:-https://portal.gabitosoft.cloud/authsvc/.well-known/jwks.json}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-https://portal.gabitosoft.cloud}
+      PORTAL_JWT_PUBLIC_KEY: ${PORTAL_JWT_PUBLIC_KEY:-}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.gabitosoft.cloud}
       APP_ORIGIN: ${APP_ORIGIN:-https://colibri.gabitosoft.cloud}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://colibri.gabitosoft.cloud}
